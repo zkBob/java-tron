@@ -342,7 +342,7 @@ public class ByteUtil {
   public static byte[] parseBytes(byte[] input, int offset, int len) {
 
     if (offset >= input.length || len == 0) {
-      return EMPTY_BYTE_ARRAY;
+      return new byte[len];
     }
 
     byte[] bytes = new byte[len];
