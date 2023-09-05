@@ -1188,6 +1188,25 @@ public class PrecompiledContractsTest extends BaseTest {
     }
   }
 
+  @Test
+  public void bn128Bench() throws Exception {
+    PrecompiledContract bn128Add = createPrecompiledContract(altBN128AddAddr, OWNER_ADDRESS);
+    JSONObject testCase = readJsonFile("bn256Add.json").getJSONObject(0);
+    byte[] input = Hex.decode(testCase.getString("Input"));
+    bench(bn128Add, input, 10000);
+
+    PrecompiledContract bn128Mul = createPrecompiledContract(altBN128MulAddr, OWNER_ADDRESS);
+    testCase = readJsonFile("bn256ScalarMul.json").getJSONObject(1);
+    input = Hex.decode(testCase.getString("Input"));
+    bench(bn128Mul, input, 1000);
+
+    PrecompiledContract bn128Pairing = 
+        createPrecompiledContract(altBN128PairingAddr, OWNER_ADDRESS);
+    testCase = readJsonFile("bn256Pairing.json").getJSONObject(13);
+    input = Hex.decode(testCase.getString("Input"));
+    bench(bn128Pairing, input, 100);
+  }
+
   //@Test
   public void convertFromTronBase58AddressNative() {
     // 27WnTihwXsqCqpiNedWvtKCZHsLjDt4Hfmf  TestNet address
@@ -1235,5 +1254,15 @@ public class PrecompiledContractsTest extends BaseTest {
 
     return JSONArray
         .parseArray(readLines.stream().reduce((s, s2) -> s + s2).get());
+  }
+
+  private static void bench(PrecompiledContract contract, byte[] input, int itersCount) {
+    long start = System.nanoTime();
+    for (int i = 0; i < itersCount; i++) {
+      contract.execute(input);
+    }
+    long end = System.nanoTime();
+    System.out.println(
+        contract.getClass().getSimpleName() + " cost " + (end - start) / itersCount + "ns");
   }
 }
