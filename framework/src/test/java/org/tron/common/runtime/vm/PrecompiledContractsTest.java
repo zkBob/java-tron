@@ -1,5 +1,6 @@
 package org.tron.common.runtime.vm;
 
+import static org.junit.Assert.assertArrayEquals;
 import static org.tron.common.utils.ByteUtil.stripLeadingZeroes;
 import static org.tron.core.config.Parameter.ChainConstant.BLOCK_PRODUCED_INTERVAL;
 import static org.tron.core.db.TransactionTrace.convertToTronAddress;
@@ -14,6 +15,7 @@ import com.google.protobuf.ByteString;
 import java.io.File;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
+import java.math.BigInteger;
 import java.util.List;
 
 import lombok.extern.slf4j.Slf4j;
@@ -1160,6 +1162,71 @@ public class PrecompiledContractsTest extends BaseTest {
     testCase = readJsonFile("bn256Pairing.json").getJSONObject(13);
     input = Hex.decode(testCase.getString("Input"));
     bench(bn128Pairing, input, 100);
+  }
+
+  @Test
+  public void bn128AdditionTest() throws Exception {
+    PrecompiledContract bn128Add = createPrecompiledContract(altBN128AddAddr, OWNER_ADDRESS);
+    // https://github.com/ethereum/go-ethereum/blob/master/core/vm/testdata/precompiles/bn256Add.json
+    JSONArray testCases = readJsonFile("bn256Add.json");
+    for (int i = 0; i < testCases.size(); i++) {
+      JSONObject testCase = testCases.getJSONObject(i);
+      String name = testCase.getString("Name");
+      byte[] input = Hex.decode(testCase.getString("Input"));
+      Boolean expectedResult = testCase.getBoolean("Result");
+      byte[] expectedOutput = Hex.decode(testCase.getString("Expected"));
+      
+      Pair<Boolean, byte[]> res = bn128Add.execute(input);
+      Boolean actualResult = res.getLeft();
+      byte[] actualOutput = res.getRight();
+      
+      Assert.assertEquals(String.format("test %s failed", name), expectedResult, actualResult);
+      assertArrayEquals(String.format("test %s failed", name), expectedOutput, actualOutput);
+    }
+  }
+
+  @Test
+  public void bn128MultiplicationTest() throws Exception {
+    PrecompiledContract bn128Mul = createPrecompiledContract(altBN128MulAddr, OWNER_ADDRESS);
+    // https://github.com/ethereum/go-ethereum/blob/master/core/vm/testdata/precompiles/bn256ScalarMul.json
+    JSONArray testCases = readJsonFile("bn256ScalarMul.json");
+    for (int i = 0; i < testCases.size(); i++) {
+      JSONObject testCase = testCases.getJSONObject(i);
+      String name = testCase.getString("Name");
+      byte[] input = Hex.decode(testCase.getString("Input"));
+      Boolean expectedResult = testCase.getBoolean("Result");
+      byte[] expectedOutput = Hex.decode(testCase.getString("Expected"));
+
+      Pair<Boolean, byte[]> res = bn128Mul.execute(input);
+      Boolean actualResult = res.getLeft();
+      byte[] actualOutput = res.getRight();
+
+      Assert.assertEquals(String.format("test %s failed", name), expectedResult, actualResult);
+      assertArrayEquals(String.format("test %s failed", name), expectedOutput, actualOutput);
+    }
+  }
+
+  @Test
+  public void bn128PairingTest() throws Exception {
+    PrecompiledContract bn128Pairing = 
+        createPrecompiledContract(altBN128PairingAddr, OWNER_ADDRESS);
+    // https://github.com/ethereum/go-ethereum/blob/master/core/vm/testdata/precompiles/bn256Pairing.json
+    JSONArray testCases = readJsonFile("bn256Pairing.json");
+    for (int i = 0; i < testCases.size(); i++) {
+      JSONObject testCase = testCases.getJSONObject(i);
+      String name = testCase.getString("Name");
+      byte[] input = Hex.decode(testCase.getString("Input"));
+      Boolean expectedResult = testCase.getBoolean("Result");
+      byte[] expectedOutput = Hex.decode(testCase.getString("Expected"));
+
+
+      Pair<Boolean, byte[]> res = bn128Pairing.execute(input);
+      Boolean actualResult = res.getLeft();
+      byte[] actualOutput = res.getRight();
+      
+      Assert.assertEquals(String.format("test %s failed", name), expectedResult, actualResult);
+      assertArrayEquals(String.format("test %s failed", name), expectedOutput, actualOutput);
+    }
   }
 
   //@Test
