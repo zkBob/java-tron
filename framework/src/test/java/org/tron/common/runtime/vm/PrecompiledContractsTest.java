@@ -4,10 +4,18 @@ import static org.tron.common.utils.ByteUtil.stripLeadingZeroes;
 import static org.tron.core.config.Parameter.ChainConstant.BLOCK_PRODUCED_INTERVAL;
 import static org.tron.core.db.TransactionTrace.convertToTronAddress;
 
+import com.alibaba.fastjson.JSONArray;
+import com.alibaba.fastjson.JSONObject;
+import com.google.common.base.Charsets;
+import com.google.common.io.Files;
 import com.google.protobuf.Any;
 import com.google.protobuf.ByteString;
+
+import java.io.File;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
+import java.util.List;
+
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.tuple.Pair;
 import org.bouncycastle.util.Arrays;
@@ -40,6 +48,7 @@ import org.tron.core.vm.PrecompiledContracts.PrecompiledContract;
 import org.tron.core.vm.config.VMConfig;
 import org.tron.core.vm.repository.Repository;
 import org.tron.core.vm.repository.RepositoryImpl;
+import org.tron.core.zksnark.SendCoinShieldTest;
 import org.tron.protos.Protocol;
 import org.tron.protos.Protocol.AccountType;
 import org.tron.protos.Protocol.Proposal.State;
@@ -94,6 +103,14 @@ public class PrecompiledContractsTest extends BaseTest {
 
   private static final DataWord totalAcquiredResourceAddr = new DataWord(
       "0000000000000000000000000000000000000000000000000000000001000015");
+
+  // bn128
+  private static final DataWord altBN128AddAddr = new DataWord(
+      "0000000000000000000000000000000000000000000000000000000000000006");
+  private static final DataWord altBN128MulAddr = new DataWord(
+      "0000000000000000000000000000000000000000000000000000000000000007");
+  private static final DataWord altBN128PairingAddr = new DataWord(
+      "0000000000000000000000000000000000000000000000000000000000000008");
 
   private static final String ACCOUNT_NAME = "account";
   private static final String OWNER_ADDRESS;
@@ -1126,6 +1143,25 @@ public class PrecompiledContractsTest extends BaseTest {
     Assert.assertEquals(0, ByteArray.toLong(res.getRight()));
   }
 
+  @Test
+  public void bn128Bench() throws Exception {
+    PrecompiledContract bn128Add = createPrecompiledContract(altBN128AddAddr, OWNER_ADDRESS);
+    JSONObject testCase = readJsonFile("bn256Add.json").getJSONObject(0);
+    byte[] input = Hex.decode(testCase.getString("Input"));
+    bench(bn128Add, input, 10000);
+
+    PrecompiledContract bn128Mul = createPrecompiledContract(altBN128MulAddr, OWNER_ADDRESS);
+    testCase = readJsonFile("bn256ScalarMul.json").getJSONObject(1);
+    input = Hex.decode(testCase.getString("Input"));
+    bench(bn128Mul, input, 1000);
+
+    PrecompiledContract bn128Pairing = 
+        createPrecompiledContract(altBN128PairingAddr, OWNER_ADDRESS);
+    testCase = readJsonFile("bn256Pairing.json").getJSONObject(13);
+    input = Hex.decode(testCase.getString("Input"));
+    bench(bn128Pairing, input, 100);
+  }
+
   //@Test
   public void convertFromTronBase58AddressNative() {
     // 27WnTihwXsqCqpiNedWvtKCZHsLjDt4Hfmf  TestNet address
@@ -1165,4 +1201,23 @@ public class PrecompiledContractsTest extends BaseTest {
     return res;
   }
 
+  private JSONArray readJsonFile(String fileName) throws Exception {
+    String file1 = SendCoinShieldTest.class.getClassLoader()
+        .getResource("json" + File.separator + fileName).getFile();
+    List<String> readLines = Files.readLines(new File(file1),
+        Charsets.UTF_8);
+
+    return JSONArray
+        .parseArray(readLines.stream().reduce((s, s2) -> s + s2).get());
+  }
+
+  private static void bench(PrecompiledContract contract, byte[] input, int itersCount) {
+    long start = System.nanoTime();
+    for (int i = 0; i < itersCount; i++) {
+      contract.execute(input);
+    }
+    long end = System.nanoTime();
+    System.out.println(
+        contract.getClass().getSimpleName() + " cost " + (end - start) / itersCount + "ns");
+  }
 }
