@@ -1042,13 +1042,13 @@ public class PrecompiledContracts {
               .submit(new RecoverAddrTask(countDownLatch, hash, signatures[i], i));
           futures.add(future);
         }
-        boolean withNoTimeout = countDownLatch
-            .await(getCPUTimeLeftInNanoSecond(), TimeUnit.NANOSECONDS);
+        // boolean withNoTimeout = countDownLatch
+        //     .await(getCPUTimeLeftInNanoSecond(), TimeUnit.NANOSECONDS);
 
-        if (!withNoTimeout) {
-          logger.info("BatchValidateSign timeout");
-          throw Program.Exception.notEnoughTime("call BatchValidateSign precompile method");
-        }
+        // if (!withNoTimeout) {
+        //   logger.info("BatchValidateSign timeout");
+        //   throw Program.Exception.notEnoughTime("call BatchValidateSign precompile method");
+        // }
 
         for (Future<RecoverAddrResult> future : futures) {
           RecoverAddrResult result = future.get();

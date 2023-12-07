@@ -82,7 +82,7 @@ public class VM {
 
 
           /* check if cpu time out */
-          program.checkCPUTimeLimit(opName);
+          //program.checkCPUTimeLimit(opName);
 
           /* exec op action */
           op.execute(program);
@@ -119,5 +119,9 @@ public class VM {
       logger.info("\n !!! StackOverflowError: update your java run command with -Xss !!!\n", soe);
       throw new JVMStackOverFlowException();
     }
+
+    // AllFi
+    long vmNowInUs = System.nanoTime() / 1000;
+    logger.info("AllFi: Elapsed (us): {}", (vmNowInUs - program.getVmStartInUs()));
   }
 }
