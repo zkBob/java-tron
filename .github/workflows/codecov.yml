@@ -1,0 +1,24 @@
+name: "Code Coverage"
+
+on:
+  push:
+    # The branches below must be a subset of the branches above
+    branches: [ 'prcoverage' ]
+  pull_request:
+    # The branches below must be a subset of the branches above
+    branches: [ 'develop' ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@master
+    - uses: actions/setup-java@v3
+      with:
+        distribution: 'zulu'
+        java-version: '8'
+        cache: 'gradle'
+    - run: ./gradlew clean build test --no-daemon
+    - uses: codecov/codecov-action@v3
+      with:
+        token: ${{ secrets.CODECOV_TOKEN }}
